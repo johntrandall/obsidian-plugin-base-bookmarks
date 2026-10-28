@@ -1,0 +1,4 @@
+_upkeep.base
+dev-docs/decisions/_decisions.base
+dev-docs/substantive/_substantive.base
+tests/fixtures/obsidian/substantive-ef3a568.base

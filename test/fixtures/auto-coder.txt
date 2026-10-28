@@ -1,0 +1,9 @@
+.worktrees/builder-wi-185-collab/docs/work-items/_index.base
+.worktrees/builder-wi-185-collab/docs/work-items/_wi-dashboard.base
+.worktrees/builder-wi-185-collab/src/installables/templates/work-items/_wi-dashboard.base
+.worktrees/phase6-build-collab-013-collab/docs/work-items/_index.base
+.worktrees/phase6-build-collab-013-collab/docs/work-items/_wi-dashboard.base
+.worktrees/phase6-build-collab-013-collab/src/installables/templates/work-items/_wi-dashboard.base
+docs/work-items/_index.base
+docs/work-items/_wi-dashboard.base
+src/installables/templates/work-items/_wi-dashboard.base

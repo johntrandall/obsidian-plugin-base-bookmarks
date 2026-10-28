@@ -1,0 +1,11 @@
+TaskNotes/Views/agenda-default.base
+TaskNotes/Views/calendar-default.base
+TaskNotes/Views/kanban-default.base
+TaskNotes/Views/mini-calendar-default.base
+TaskNotes/Views/pomodoro-stats.base
+TaskNotes/Views/relationships.base
+TaskNotes/Views/tasks-default.base
+Untitled.base
+applications/_applications.base
+dev-docs/decisions/_decisions.base
+dev-docs/substantive/_substantive.base

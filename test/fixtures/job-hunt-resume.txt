@@ -1,0 +1,2 @@
+dev-docs/decisions/_decisions.base
+dev-docs/substantive/_substantive.base

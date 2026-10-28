@@ -1,0 +1,11 @@
+Untitled.base
+dev-docs/decisions/_decisions.base
+dev-docs/experiments/_experiments.base
+dev-docs/runs/2026-10-23-cards-revise/panel-prototype/_systems.base
+dev-docs/runs/2026-10-24-card-grouping/probes/2026-10-23-a.base
+dev-docs/runs/2026-10-24-card-grouping/probes/probe-b.base
+dev-docs/runs/2026-10-24-card-grouping/probes/probe-c.base
+dev-docs/substantive/_substantive.base
+plugin/skills/watchbill/references/templates/decisions/_decisions.base
+plugin/skills/watchbill/references/templates/decisions/_queue.base
+plugin/skills/watchbill/references/templates/decisions/_substantive.base

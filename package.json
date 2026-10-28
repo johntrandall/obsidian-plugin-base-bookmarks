@@ -1,0 +1,27 @@
+{
+  "name": "obsidian-plugin-base-bookmarks",
+  "version": "0.1.0",
+  "description": "Keeps a bookmark for every Base in the vault, in a Bases group of the Bookmarks pane.",
+  "main": "main.js",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johntrandall/obsidian-plugin-base-bookmarks.git"
+  },
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "typecheck": "tsc -noEmit -skipLibCheck",
+    "test": "node --test test/"
+  },
+  "keywords": ["obsidian", "obsidian-plugin", "bases", "bookmarks"],
+  "author": "John Randall",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "esbuild": "0.28.0",
+    "obsidian": "^1.13.1",
+    "tslib": "^2.6.2",
+    "typescript": "^5.4.3"
+  }
+}
