@@ -1,98 +1,114 @@
 ---
 title: Base Viewer — design
-status: draft for John's review
+status: draft for John's review (revision 2)
 date: 2026-10-28
 author: watchbill architect session 8be48108
+owner: John Randall
 ---
 
 # Base Viewer — design
 
 ## Start here
 
-**What this is.** A design, not yet built, for a small Obsidian plugin whose only job is to make a vault's Bases visible: when a vault holds a handful of `.base` files (10 or fewer by default), the plugin lists all of them, and each of their views, in a sidebar panel, so one click opens a board. Written for John, who reviews it, and for whichever agent builds it.
+**What this is.** The design, not yet built, of a small Obsidian plugin with one job: an always-visible sidebar panel that lists the Bases in the vault you are in, so one click opens any of them. Written for John, who owns the project and approves this design before anything is built, and for the agent that builds it. Revision 2 folds in John's answers of 2026-10-28 to [questions-round-1.md](questions-round-1.md).
 
-**Terms used below.**
-- **Base**: a `.base` file, Obsidian's core Bases feature (a YAML file holding filters and one or more views over the vault's notes).
+**Terms.**
+- **Base**: a `.base` file, Obsidian's core Bases feature: a YAML file holding filters and one or more views over the vault's notes.
 - **View**: one named layout inside a Base (`1 · STATUS` kanban, `2 · ALL` table). A view is never called a tab; a tab is a herdr or browser tab.
-- **Watchbill system**: one of John's agent-run projects (`watchbill systems` lists 32). Each keeps its human-facing state in Markdown records and shows it to John through Bases, chiefly the decision board `dev-docs/decisions/_decisions.base` and the substantive-decisions list `dev-docs/substantive/_substantive.base`.
-- **Architect / steward**: the watchbill seats that design a system and run it. Their Bases are where John reads what they are doing and answers their questions.
+- **Watchbill**: John's system of agent-run projects. Each project ("system") shows John its work through Bases: an **architecture board** (the architect's decisions, `dev-docs/decisions/_decisions.base`, with `dev-docs/substantive/_substantive.base` beside it) and, in many systems, an **operations board** at the vault root where the steward's work items move (outreach's `_drafts.base`, upstream's `_contributions.base`, software-upkeep's `_upkeep.base`, mcp-readiness's `operations.base`).
+- **BRAT**: the community plugin that installs plugins straight from a GitHub repo, before (or instead of) the community directory.
+- **LiveSync**: the self-hosted sync plugin that carries John's vaults between the Mac (SusanBones) and the iPad (Mel).
 
-**Why it exists.** Bases are John's front door to every watchbill system, but Obsidian's file explorer buries them two folders deep (`dev-docs/decisions/_decisions.base`) among hundreds of records, and nothing in Obsidian lists "the boards in this vault". So each time John opens a system's vault he has to dig for the board, or an agent has to hand him a link. The plugin removes the dig.
+**Why it exists.** John flips between Bases to see what each system's architect and steward are doing. Obsidian's file explorer buries the Bases two folders deep among hundreds of records, and nothing in Obsidian lists "the Bases in this vault". John, 2026-10-28: "The pain is finding the base inside a vault … we want to be able to get to just the bases quickly."
 
-## What the vaults actually hold (scan, 2026-10-28)
+## Decided (John, 2026-10-28, in chat)
 
-Counted every `.base` file in the 80 vaults registered in `obsidian.json` (skipping `.git`, `.obsidian`, `node_modules`, `.trash`). Observed:
-
-| Shape | Examples | Count |
+| # | Decision | John's words |
 |---|---|---|
-| A watchbill system vault | job-hunt-resume, claude-statusline, windfall, odd-jobs, markdown-unwrap | 2 (`_decisions`, `_substantive`) |
-| A system with its own work board | _outreach, privileged-executor, calendar-agent, job-hunt | 3–5 |
-| Inflated by noise | claude-plugin-watchbill (11: plugin templates, `Untitled.base`), job-hunt-applications (11: TaskNotes default views, `Untitled.base`), auto-coder (9: copies inside `.worktrees/`), mantisflow (copies inside `.claude/worktrees/`) | 9–11 |
-| Large vaults | `~/dev` as one vault (1,103), callimachus-engine (141) | far over any cap |
-
-So the real number of boards per system is 2 to 5, and almost every count above that is noise: git worktree copies, templates, test fixtures, vendored docs and `Untitled*.base` files left from experiments. The filter matters as much as the list.
+| D1 | Scope is one vault: the plugin lists the Bases of the vault it runs in. | "For now the flipping is inside one vault." "Let's keep this to be just within a single vault … Let that be the focus of this project." |
+| D2 | A hub across vaults (for example in the `~/decisions` vault) is a later idea, out of scope here. | "A hub panel in the decisions vault might actually be a good thing." |
+| D3 | The Bases live in an always-visible sidebar panel. | "The sidebar panel, which is always visible, that's where the bases should be." |
+| D4 | Over 10 Bases: show the architecture board and the main operations board, plus a message that there are more. | "If we do it can just show the architecture one and the main operations one and then show an error message, you know, more than 10 … here." |
+| D5 | A click opens the Base on its default or last-used view; no rows per view. | "It should open the base to its default view or to the last used view, I guess." |
+| D6 | Runs on the Mac and the iPad. | "It needs to run on Mac as well as iPad." |
+| D7 | Independent of watchbill; watchbill is the use case, not a dependency. | "This plugin should be independent of Watchbill, but my use case is Watchbill." |
+| D8 | Its own software project, owned by John, shipped as an Obsidian plugin through BRAT, and added as a default plugin to every vault by the vault setup and LiveSync installer. | "This should definitely be its own software project." "I own it. It's an Obsidian plugin. It gets installed … probably with BRAT and the Obsidian LiveSync plugin installer setup should add it as a default plugin on all of our vaults." |
 
 ## What it does
 
-1. **One sidebar panel, "Bases".** Opens in the left sidebar on first load and stays where John puts it, like the file explorer. A ribbon icon and a command (`Base Viewer: show panel`) bring it back.
-2. **Lists every Base that passes the filter**, each as a row: a display name (file name without the leading `_` and the `.base`; `_decisions.base` → **decisions**) and, in grey, its folder (`dev-docs/decisions`). Rows sort by folder then name, so a system's boards group naturally.
-3. **Each row expands to the Base's views**, read from the file's `views:` list, with the view type as a small icon (kanban, table, cards, list). Clicking the Base opens it on its first view; clicking a view opens the Base on that view.
-4. **The cap.** When more than the cap (default 10) Bases pass the filter, the panel lists none of them and says so in one line: "1,103 Bases in this vault, over the limit of 10. Raise the limit or add folders to skip in settings." It never shows an arbitrary first 10, which would hide boards silently. This keeps the `~/dev` umbrella vault from rendering a thousand rows.
-5. **Live.** Creating, deleting, renaming or editing a `.base` file updates the panel (vault events, debounced about 300 ms). No polling.
-6. **Read only.** The plugin never writes a `.base` file, a note, or anything in `.obsidian` except its own `data.json` settings through Obsidian's `saveData`.
+1. **A "Bases" panel in the left sidebar**, opened on first load and kept wherever John drags it, like the file explorer. A ribbon icon and the command `Base Viewer: show panel` bring it back if closed. On the iPad the left sidebar is a drawer; the panel sits in it beside the file explorer.
+2. **One row per Base**: a display name (the file name without a leading `_` and without `.base`, so `_decisions.base` reads **decisions**) and, in grey beneath, its folder (`dev-docs/decisions`). Pinned Bases (below) come first, then the rest sorted by folder and name, so a system's boards group together.
+3. **A click opens the Base** in the current tab (Cmd-click or middle-click: a new tab) with Obsidian's own file opening, so Obsidian shows its default or last-used view (D5). The row of the Base already open is highlighted.
+4. **The cap (D4).** When more than 10 Bases pass the filter, the panel lists only the **pinned** Bases (the architecture and operations boards) and, under them, one line: "14 more Bases in this vault (over the limit of 10)." It never shows an arbitrary first 10.
+5. **Live.** Creating, deleting, renaming or moving a `.base` file updates the panel within about half a second (vault events, debounced). No polling.
+6. **Read only.** The plugin writes nothing but its own settings, through Obsidian's `saveData`.
 
-## The filter
+## Pinned Bases: the architecture and operations boards
 
-A Base is skipped when its path matches any glob in the skip list. Defaults, each traced to a case in the scan:
+D4 needs the plugin to know which Bases are "the architecture one and the main operations one" without depending on watchbill (D7). It does so with a **pinned list** of path patterns in its settings. A Base matching a pattern is always listed first, under the cap or over it. The defaults describe watchbill's layout, as plain patterns any vault can change:
 
-| Glob | Why |
+| Default pattern | Matches | Seen in |
+|---|---|---|
+| `dev-docs/decisions/_decisions.base` | the architecture board | every watchbill system |
+| `dev-docs/substantive/_substantive.base` | the decisions waiting on John, beside it | every watchbill system |
+| `*.base` at the vault root, not `Untitled*` | the operations board | outreach, upstream, software-upkeep, mcp-readiness, events, writing, decisions |
+
+A vault with no match simply has no pinned Bases. The patterns are ordinary settings, so a non-watchbill vault sets its own, and an agent can set them through the plugin's own settings call (the sanctioned route `obsidian-vault-setup` already uses), never by writing `data.json` by hand.
+
+## The noise filter
+
+Most vaults over a handful of Bases are inflated by copies and leftovers, not boards (scan of all 80 registered vaults, 2026-10-28). A Base whose path matches a skip pattern is not listed and does not count toward the cap. Defaults, each traced to a vault where the scan found it:
+
+| Skip pattern | Why |
 |---|---|
 | `**/.worktrees/**`, `**/.claude/worktrees/**` | git worktree copies duplicate every board (auto-coder, mantisflow) |
-| `**/templates/**`, `**/tests/fixtures/**` | plugin templates and test fixtures are not boards (claude-plugin-watchbill, _software-upkeep) |
+| `**/templates/**`, `**/tests/fixtures/**` | templates and test fixtures (claude-plugin-watchbill, software-upkeep) |
 | `**/vendor/**`, `**/vendor-docs/**`, `**/node_modules/**` | vendored repos (ios-app-manager, _resources) |
 | `TaskNotes/Views/**` | TaskNotes' auto-created default views (job-hunt-applications) |
-| `**/zArchive/**`, `**/.trash/**` | archived material |
-| `**/Untitled*.base` | experiments left unnamed (seven vaults) |
+| `**/zArchive/**`, `**/archive/**` | archived material |
+| `**/Untitled*.base` | unnamed experiments (seven vaults) |
 
-John can edit the list in settings. The cap counts only what passes the filter.
+With these, every watchbill system vault in the scan lists 2 to 5 Bases, under the cap. The cap message is for vaults such as the `~/dev` umbrella (1,103 Bases) and callimachus-engine (141).
 
 ## Settings
 
-| Setting | Default | Note |
-|---|---|---|
-| Cap | 10 | 0 means no cap |
-| Skip globs | the table above | one per line |
-| Show views | on | off gives a flat list of Bases |
-| Open in | current tab | or a new tab (John's links elsewhere open in a new tab) |
-| Reveal panel on vault open | on | |
+| Setting | Default |
+|---|---|
+| Cap | 10 (0 means no cap) |
+| Pinned patterns | the three above |
+| Skip patterns | the table above |
+| Open the panel when the vault opens | on |
+
+Settings are per vault, in the plugin's own `data.json`. LiveSync's Customisation Sync carries them between the Mac and the iPad with the plugin.
 
 ## How it is built
 
-- **Plain Obsidian plugin**, TypeScript, built with esbuild from the official sample-plugin layout. One `ItemView` registered as the panel, one settings tab, no dependencies beyond `obsidian` and a small glob matcher (`picomatch`, or Obsidian-free hand-rolled matching to keep the bundle tiny).
-- **Discovery** is a pure function: `listBases(paths, skipGlobs, cap) → {bases} | {overCap: n}`. It takes `app.vault.getFiles()` filtered to extension `base`, so it sees exactly what Obsidian indexes. Being pure, it is unit-tested against path lists captured from the scan above.
-- **Views** come from `parseYaml` (Obsidian's own) on `app.vault.cachedRead(file)`; a Base whose YAML does not parse still lists, with "(views unreadable)".
-- **Opening a view**: `app.workspace.openLinkText("<path>#<view name>", "", newTab)`. Obsidian accepts `[[file.base#View]]` links to a Base view; that `openLinkText` with the same subpath selects the view is **Inferred**, not yet tested, and is the first spike (below).
-- **Mobile**: `isDesktopOnly: false`, no Node or Electron APIs, so it runs on John's iPad and iPhone vaults too.
+- **A plain Obsidian plugin** in TypeScript, from the official sample-plugin layout, built with esbuild into one `main.js`. One `ItemView` for the panel, one settings tab. No runtime dependencies beyond `obsidian`; the few glob forms above are matched by a small hand-written matcher, which keeps the bundle small and avoids Node APIs.
+- **Discovery is one pure function**, `listBases(paths, settings) → { pinned, rest, hiddenCount }`, fed by `app.vault.getFiles()` filtered to the `base` extension, so it sees exactly what Obsidian indexes. Being pure, it is unit-tested (vitest) against path lists captured from the scan: real vaults, not invented ones.
+- **Opening** is `app.workspace.getLeaf(newTab).openFile(file)`. Obsidian then restores the Base's last view itself (D5); the plugin never passes a view.
+- **Mobile (D6)**: `isDesktopOnly: false` in the manifest, and no `fs`, `path`, Electron or Node call anywhere. Tested on Mel, not only assumed.
+- **Repo**: this folder, `~/dev/obsidian-base-viewer`, published as a public GitHub repo under `johntrandall` with a release per version (`manifest.json`, `main.js`, `styles.css` as release assets), which is what BRAT installs from. On-prem Forgejo mirror as for John's other repos.
 
-## Alternatives considered
+## Rollout (D8)
 
-- **Obsidian's core Bookmarks.** It can already bookmark a `.base` file, and works today with no code. It is manual per vault, across roughly 30 system vaults and every new one, and an agent may not write `.obsidian/bookmarks.json` on John's behalf (application data rule). It also cannot bookmark a view. Good enough for one vault; not for the fleet.
-- **A watchbill-generated home note** (a `_home.md` with links to each board, written by `watchbill systems init`). Cheap and agent-maintained, but it goes stale, is one more file per system, and still has to be found. Worth keeping as a fallback if the plugin is rejected.
-- **An existing community plugin.** Not yet searched. Before building, the spike checks the community list for a "Bases in sidebar" plugin; adopting or forking one beats writing a new one.
+1. **First vault**: this one, by BRAT, then two watchbill system vaults John uses daily, on the Mac and on Mel.
+2. **Every vault**: add the plugin to the plugin manifest (`~/admin-technical/inventories/obsidian-plugins.yaml`) as `source: github`, `install: brat`, in the `always_on` list, so `obsidian-vault-setup` installs and switches it on in every new vault and in every existing one on its next `apply`. Vaults on LiveSync carry it to the iPad by Customisation Sync, which the iPad enrolment already applies. The manifest is John's infrastructure, so that change is made there, after this plugin's first release passes its gate, with John's yes.
+3. **Overlap to remove**: since 2026-10-19 `obsidian-vault-setup` bookmarks every Base ("Base · <name>") in each vault's Bookmarks pane. Once this plugin is in every vault the bookmarks duplicate it and go stale (a Base created later is never bookmarked). Proposal: switch `bookmark_bases` off in the manifest at the same time, and leave existing bookmarks alone. John's call.
 
-## How it reaches John's vaults
+## Later (not this project's first release)
 
-The plugin lives in this repo and is published on GitHub; vaults install it through BRAT, which the system vaults already carry (`obsidian42-brat` in job-hunt-resume). Getting it into every system vault, existing and new, is a question for the watchbill plugin's architect: the natural place is the vault-setup step `watchbill systems init` already runs. That is a REQUEST to that system through its intake once John approves this design, not something this project does in other repos.
+- **Hub panel** in the `~/decisions` vault listing every system's boards across vaults (D2).
+- **Counts** of cards waiting on John beside each row (question 3 of round 1; not taken up, since D1 asks for "just the bases quickly").
 
 ## Open questions for John
 
-1. **"Show up" where?** This design puts the Bases in a sidebar panel. The alternatives are opening each Base as a tab when the vault opens (noisy at 5 boards, and fights the workspace John has arranged), or pinning them at the top of the file explorer (needs patching Obsidian's explorer DOM, fragile across releases). Recommendation: the sidebar panel.
-2. **Over the cap: show nothing, or show something?** Recommendation: nothing plus the one-line count, as above. The alternative is to fall back to listing only Bases whose file name starts with `_` (the watchbill convention for boards), which would make the `~/dev` umbrella vault list its 60-odd system boards. Say if you want that.
-3. **Name.** The folder is `obsidian-base-viewer`, but the plugin does not view Bases, it lists them; "Bases Panel" (id `bases-panel`) says what it does. Recommendation: rename before the first release, since a plugin id is awkward to change later.
-4. **Is this a watchbill system?** It is deterministic software with consumers (every system vault), which fits a software-shaped system: an architect only, no steward, dormant after the gate, intake for requests. Recommendation: yes, registered once the first release ships.
+1. **Is the vault-root rule right for "the main operations one"?** It picks every root-level Base. That fits each system in the scan, where the root Base is the operations board. A system that later puts two Bases at its root shows both pinned. The alternative is a name rule (`_*.base` at the root), which would miss mcp-readiness's `operations.base`. Recommendation: the root rule.
+2. **"Not going to live in dev."** I read this as: not part of watchbill and not inside the `~/decisions` vault, so the repo stays at `~/dev/obsidian-base-viewer` like John's other software. Say if you meant a different home.
+3. **Name.** It lists and opens Bases; Obsidian views them. "Bases Panel" (id `bases-panel`) says what it does; a plugin id is awkward to change once installed in every vault. Recommendation: rename before the first release. Keep "Base Viewer" if you prefer it.
+4. **The bookmarks overlap** (rollout step 3): switch `bookmark_bases` off once this ships?
 
-## First build cycle (once approved)
+## First build cycle (after John approves this design)
 
-1. **Spike, about one hour.** In a scratch vault: confirm `openLinkText` with `#view` selects the view (else find the API that does); check the community plugin list for prior art; check that `getFiles()` includes `.base` files on mobile.
-2. **Build** the panel, filter, cap, settings and live updates.
-3. **Gate** (what "done" means): the discovery unit tests pass on the scan's path lists (job-hunt-resume lists 2, claude-plugin-watchbill and job-hunt-applications drop to their real boards, `~/dev` reports over cap); the plugin loads with no console errors in Obsidian 1.15 on the Mac and on the iPad; a screenshot of the panel in two system vaults, looked at, not only measured; clicking a view opens that view.
+1. **Spike** (about an hour, in this vault): confirm `getFiles()` lists `.base` files on Mel; confirm `openFile` restores the last-used view; check the community plugin list for an existing plugin that does this (adopt or fork it if one exists).
+2. **Build** the panel, filter, pins, cap, settings and live updates.
+3. **Gate**, what "done" means, each with evidence: the `listBases` unit tests pass on the scan's path lists (job-hunt-resume lists 2; claude-plugin-watchbill and job-hunt-applications drop to their real boards; `~/dev` shows only its pins and the "more" line); the plugin loads with no console errors on the Mac (Obsidian 1.15) and on Mel; a screenshot of the panel in two system vaults on each device, looked at, not only measured; a click opens the Base on its last view; creating and deleting a Base updates the panel live.
