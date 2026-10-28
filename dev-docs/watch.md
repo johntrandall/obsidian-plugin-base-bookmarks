@@ -30,3 +30,4 @@ To John in this session's chat; anything urgent also as a push notification.
 ## Log
 
 - 2026-10-28 17:40: watch armed; 3 vaults on 0.1.1, all in step.
+- 2026-10-28 18:56: claude-plugin-watchbill went from 7 to 8 Bases and its group followed on its own (a Base created by another session, bookmarked live); 3 vaults in step; intake not yet processed; Mel offline.
