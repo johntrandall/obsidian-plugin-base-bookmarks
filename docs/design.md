@@ -1,6 +1,6 @@
 ---
 title: Base Bookmarks — design
-status: draft for John's review (revision 3)
+status: approved (revision 3; John, 2026-10-28 17:14, in chat) and built; 0.1.0 released
 date: 2026-10-28
 author: watchbill architect session 8be48108
 owner: John Randall
@@ -37,6 +37,7 @@ owner: John Randall
 | D9  | Repo name `obsidian-plugin-base-bookmarks`; plugin id `base-bookmarks`. Recorded as a convention in `naming-governance.md` item 9 and the `dev-repo-naming` skill. | "Obsidian plugin dash plugin name."                                                                                                                                                                                                           |
 | D10 | Existing plugin repos are not renamed now.                                                                                                                         | "Existing plugin repos don't need to be renamed right now."                                                                                                                                                                                   |
 | D11 | BRAT stays switched on with update-at-startup, so our GitHub plugins update themselves. A request to the plugin manifest, written with this design.                | "This sounds good."                                                                                                                                                                                                                           |
+| D12 | Approval to build, test and release, conditional on no major substantive change surfacing in verification. | "take a look at the design, run verification against it. If it's approved with no major substantive changes that need review, you can go ahead and proceed with the build and release cycle. Bring this job home." (17:14) |
 
 ## What it does
 
@@ -65,12 +66,26 @@ With these, every watchbill system vault in the scan gets 2 to 5 bookmarks. A va
 ## How it is built
 
 - **A plain Obsidian plugin** in TypeScript from the official sample-plugin layout, built with esbuild into one `main.js`. No runtime dependencies; the few glob forms above are matched by a small hand-written matcher. No `fs`, `path`, Electron or Node call anywhere, and `isDesktopOnly: false`, so it runs on the iPad (D7).
-- **The matching is one pure function**, `plan(basePaths, groupItems, skipList) → { add, remove }`, unit-tested (vitest) against the path lists captured from the scan.
+- **The matching is one pure function**, `plan(basePaths, topItems, skipList)` in `src/plan.ts`, returning the group to keep, duplicate groups, legacy bookmarks, stale bookmarks and the desired order; unit-tested with `node --test` (Node 23.6+ strips the types) against the path lists captured from five real vaults.
 - **Bookmarks are written through the Bookmarks plugin's own methods**, inside the running app: `app.internalPlugins.getPluginById('bookmarks').instance` with `addItem`, `removeItem` and `getBookmarks` (methods listed in this vault 2026-10-28, Obsidian 1.15.0). Obsidian then writes its own `bookmarks.json`; the plugin never edits that file. This interface is **not part of Obsidian's published plugin API**: the call site carries a comment saying so, the README's "Undocumented API" table records it (the `undocumented-api-usage` pattern vault setup already follows), and the plugin checks the methods exist and shows a one-line notice instead of failing silently if a future Obsidian removes them.
 - **Event behaviour, Verified 2026-10-28 on the Mac:** a listener on `vault.on('create')` filtered to `extension === 'base'` received `TEST-create-event.base` written from the shell within 3 s (test file removed afterwards).
 - **Repo**: `~/dev/obsidian-plugin-base-bookmarks` (D9; this folder is renamed with Obsidian's "Move vault", which keeps the vault's identity), public GitHub repo `johntrandall/obsidian-plugin-base-bookmarks` with a release per version (`manifest.json`, `main.js` as release assets) for BRAT, and the on-prem Forgejo mirror.
 
+## What the build found (2026-10-28, Obsidian 1.15.0, Mac; Verified unless marked)
+
+- **Rename inside Obsidian updates a bookmark's path; rename or delete outside Obsidian does not**: the bookmark goes stale (a `git mv` arrives as delete + create). So the plugin rebuilds the group from the files on disk on every event, rather than patching single entries.
+- **Deleting a Base inside Obsidian leaves its bookmark too**; the plugin removes it (live test: group emptied within 2 s).
+- **The Bookmarks plugin sets each item's parent link when it loads `bookmarks.json`**, and `moveItem` sets it for new items; the plugin places every item with `moveItem` so removing a bookmark from the pane later works.
+- **No "loaded" flag exists** (`hasValidData` is false for a vault with no bookmarks file). Guard: the plugin never writes while the in-memory list is empty and `bookmarks.json` on disk holds items; it retries 2 s later.
+- **Every add and move saves `bookmarks.json`**; the plugin holds saves during a batch and saves once (matters for a vault with hundreds of Bases).
+- **The Bookmarks plugin emits `changed`** when its list changes, including when a sync tool replaces `bookmarks.json` (its wrapper reloads on a config-file change); the plugin listens and heals the group (duplicate group from another device, a Base bookmark John removed by hand).
+- **macOS paths are case-insensitive**: a test folder `TEST/` landed inside the repo's `test/`; Obsidian reports the real path and the plugin follows it. Test fixtures now use `TEST-bb/`.
+- **Real vaults**: `job-hunt-resume` (no bookmarks) got its 2 boards; `claude-plugin-watchbill`'s two "Base · " bookmarks moved into the group, plus 5 experiment Bases under `dev-docs/runs/` (any Base in the vault, D2; rename or add a skip pattern if they are noise).
+
 ## Rollout (D8, D11)
+
+**Owner of the rollout:** the watchbill system `obsidian-vault-lifecycle` (founded 2026-10-28) owns vault setup, the plugin roster and device rollout. The steps below went to its architect as an intake request (`~/dev/obsidian-vault-lifecycle/intake/2026-10-28-base-bookmarks-rollout.md`); this project does not edit that system's files.
+
 
 These are changes to the plugin manifest `~/admin-technical/inventories/obsidian-plugins.yaml` and to vault setup, made after this plugin's first release passes its gate:
 
