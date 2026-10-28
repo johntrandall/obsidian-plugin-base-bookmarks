@@ -8,6 +8,10 @@ interface BaseBookmarksSettings {
 
 const DEFAULT_SETTINGS: BaseBookmarksSettings = { skip: DEFAULT_SKIP };
 
+// How long after load the plugin holds removals (a sync tool such as
+// LiveSync may still be delivering files on a phone or tablet).
+const SETTLE_MS = 60_000;
+
 // UNDOCUMENTED API (README, "Undocumented API"). Obsidian's core Bookmarks
 // plugin is not part of the published plugin API. These members were read
 // from Obsidian 1.15.0 on 2026-10-28: `items` (the top-level list, groups hold
@@ -34,6 +38,7 @@ interface InternalPlugins {
 export default class BaseBookmarksPlugin extends Plugin {
 	settings: BaseBookmarksSettings = { ...DEFAULT_SETTINGS };
 	private warned = false;
+	private loadedAt = Date.now();
 	private applying = false;
 	private readonly scheduleSync = debounce(() => void this.sync(false), 750, true);
 
@@ -119,8 +124,18 @@ export default class BaseBookmarksPlugin extends Plugin {
 			return;
 		}
 
-		const paths = this.app.vault.getFiles().filter((f) => f.extension === "base").map((f) => f.path);
-		const p = plan(paths, bm.items, this.settings.skip);
+		// Obsidian's own Excluded files (Settings → Files and links) count as
+		// skipped too. `isUserIgnored` is undocumented: used only when present.
+		const cache = this.app.metadataCache as unknown as { isUserIgnored?: (path: string) => boolean };
+		const paths = this.app.vault
+			.getFiles()
+			.filter((f) => f.extension === "base" && !(cache.isUserIgnored?.(f.path) ?? false))
+			.map((f) => f.path);
+		// For the first minute a sync tool may still be delivering files: keep
+		// bookmarks of Bases not on disk yet, and look again when it is over.
+		const settling = Date.now() - this.loadedAt < SETTLE_MS;
+		if (settling) window.setTimeout(() => this.scheduleSync(), SETTLE_MS - (Date.now() - this.loadedAt) + 1000);
+		const p = plan(paths, bm.items, this.settings.skip, { removeMissing: !settling });
 		if (!p.changed) {
 			if (manual) new Notice(`Base Bookmarks: ${p.desired.length} Bases, already bookmarked.`);
 			return;

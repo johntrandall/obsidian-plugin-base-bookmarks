@@ -112,9 +112,28 @@ export interface Plan {
 	changed: boolean;
 }
 
-export function plan(basePaths: string[], topItems: BookmarkItem[], skipPatterns: string[]): Plan {
-	const desired = wantedBases(basePaths, compileSkip(skipPatterns));
-	const wanted = new Set(desired);
+export interface PlanOptions {
+	// False while a sync tool may still be delivering files (the first minute
+	// after load): a missing Base may only not have arrived yet, so its
+	// bookmark is kept. Duplicates are still removed.
+	removeMissing?: boolean;
+}
+
+export function plan(basePaths: string[], topItems: BookmarkItem[], skipPatterns: string[], options: PlanOptions = {}): Plan {
+	const removeMissing = options.removeMissing ?? true;
+	const skip = compileSkip(skipPatterns);
+	const present = wantedBases(basePaths, skip);
+	const wanted = new Set(present);
+	// While holding removals, a bookmarked Base that is not on disk yet keeps
+	// its place, unless a skip pattern now excludes it.
+	if (!removeMissing) {
+		for (const g of topItems.filter((it) => it.type === "group" && it.title === GROUP_TITLE)) {
+			for (const it of g.items ?? []) {
+				if (isPlainBaseBookmark(it) && !skip.some((re) => re.test(it.path as string))) wanted.add(it.path as string);
+			}
+		}
+	}
+	const desired = [...wanted].sort((a, b) => a.localeCompare(b));
 
 	const groups = topItems.filter((it) => it.type === "group" && it.title === GROUP_TITLE);
 	const group = groups.length > 0 ? groups[0] : null;

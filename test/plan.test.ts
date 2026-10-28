@@ -140,3 +140,22 @@ test("large vault: hundreds of Bases plan quickly", () => {
 	assert.equal(p.desired.length, 1200);
 	assert.ok(Date.now() - t0 < 500);
 });
+
+test("first minute after load: a bookmarked Base not on disk yet is kept, then removed", () => {
+	const late = file("dev-docs/runs/_late.base");
+	const g = group([file("dev-docs/decisions/_decisions.base"), late, file("dev-docs/substantive/_substantive.base")]);
+	const held = plan(fixture("job-hunt-resume"), [g], DEFAULT_SKIP, { removeMissing: false });
+	assert.deepEqual(held.stale, []);
+	assert.equal(held.changed, false);
+	const after = plan(fixture("job-hunt-resume"), [g], DEFAULT_SKIP, { removeMissing: true });
+	assert.deepEqual(after.stale, [late]);
+});
+
+test("first minute after load: a duplicate is still removed, a newly skipped Base still goes", () => {
+	const twice = file("dev-docs/decisions/_decisions.base");
+	const g = group([file("dev-docs/decisions/_decisions.base"), file("dev-docs/substantive/_substantive.base"), twice]);
+	assert.deepEqual(plan(fixture("job-hunt-resume"), [g], DEFAULT_SKIP, { removeMissing: false }).stale, [twice]);
+	const g2 = group([file("dev-docs/decisions/_decisions.base"), file("dev-docs/substantive/_substantive.base")]);
+	const p2 = plan(fixture("job-hunt-resume"), [g2], [...DEFAULT_SKIP, "dev-docs/substantive/**"], { removeMissing: false });
+	assert.equal(p2.stale.length, 1);
+});

@@ -9,8 +9,9 @@ Bases tend to live a few folders deep, among the notes they show. The Bookmarks 
 - **When the vault opens**, it makes the **Bases** group in the Bookmarks pane hold one bookmark per Base in the vault, sorted by path.
 - **When a Base is created, renamed, moved or deleted**, it updates the group within about a second, including changes made outside Obsidian (a `git pull`, a script, a sync tool).
 - **It only manages the Bases group.** Bookmarks outside it are never touched. Anything else you put inside the group is kept, after the Bases.
-- **No titles:** each bookmark shows the Base's file name, so good file names are what make the list readable.
-- **Skip patterns** keep noise out: git worktree copies, templates, test fixtures, vendored folders, archives, TaskNotes' default views and `Untitled*.base` files are skipped by default. Edit the list in Settings → Base Bookmarks.
+- **No titles:** each bookmark shows the Base's file name, with its `.base` extension (Obsidian shows the extension for every file that is not Markdown), so good file names are what make the list readable.
+- **Sync-safe start:** for the first minute after Obsidian loads, a bookmark whose Base is not on disk yet is kept (a sync tool may still be delivering it); the plugin looks again after that minute.
+- **Skip patterns** keep noise out: git worktree copies, templates, test fixtures, vendored folders, archives, TaskNotes' default views and `Untitled*.base` files are skipped by default. Edit the list in Settings → Base Bookmarks. Bases in Obsidian's own Excluded files are skipped as well.
 - **Command:** "Base Bookmarks: Bookmark all Bases now" rebuilds the group on demand (also a button in the settings).
 - Works on desktop and mobile. Writes nothing but bookmarks and its own settings.
 
@@ -35,6 +36,7 @@ Obsidian's plugin API has no interface to the Bookmarks core plugin, so this plu
 | `instance.removeItem(item)` | removing old top-level "Base · " bookmarks and duplicate groups | notice |
 | `instance.editItem(item)` | saving once after a batch | notice |
 | `instance.saveData` (held during a batch) | one save per batch instead of one per bookmark | the plugin saves per bookmark instead |
+| `app.metadataCache.isUserIgnored(path)` | honouring Obsidian's Excluded files | Excluded files are not skipped |
 | `instance.on("changed")` | healing the group after a sync tool replaces `bookmarks.json` | the group heals at the next vault open or Base change |
 
 Two behaviours, checked on Obsidian 1.15.0 (macOS): renaming a Base inside Obsidian updates its bookmark; renaming or deleting it outside Obsidian leaves a stale bookmark, which this plugin removes.

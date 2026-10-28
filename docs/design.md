@@ -45,7 +45,7 @@ owner: John Randall
 2. **On a new, renamed or deleted `.base` file** it updates the group within about a second. The vault's `create`, `rename` and `delete` events fire for every file; the plugin ignores any file whose extension is not `base`. It subscribes only after the vault has loaded, because Obsidian also fires `create` for every existing file while a vault opens.
 3. **A command**, "Base Bookmarks: bookmark all Bases now", runs step 1 on demand. Vault setup calls it after installing the plugin (`obsidian vault=<name> command id=base-bookmarks:sync`).
 4. **It owns only the Bases group.** It never touches bookmarks outside it. On its first run in a vault it moves vault setup's top-level "Base · <name>" bookmarks for the same files into the group, so no Base appears twice; after that, vault setup stops bookmarking Bases (rollout, below).
-5. **Titles (D6):** bookmarks are added without a title, so the pane shows the file's name (`_decisions`, `_drafts`, `operations`).
+5. **Titles (D6):** bookmarks are added without a title, so the pane shows the file's name, with its extension (`_decisions.base`, `_drafts.base`): Obsidian's Bookmarks pane shows the extension for every non-Markdown file (verification 2026-10-28). In a vault holding several systems the same name repeats (`_decisions.base` several times); D6 puts the fix in file names.
 6. **Nothing else.** No panel, no settings screen beyond the skip list, no writing of notes or Bases.
 
 ## Which Bases: the skip list
@@ -61,7 +61,7 @@ Most vaults with many Bases hold copies and leftovers, not boards (scan of all 8
 | `**/zArchive/**`, `**/archive/**` | archived material |
 | `**/Untitled*.base` | unnamed experiments (seven vaults). A Base made in Obsidian starts as `Untitled.base`, so it is bookmarked when it is renamed |
 
-With these, every watchbill system vault in the scan gets 2 to 5 bookmarks. A vault such as the `~/dev` umbrella (1,103 Bases) would get hundreds; the Bookmarks pane scrolls, and the group can be collapsed. If that is a problem in practice, a cap is a later change.
+With these, most watchbill system vaults in the scan get 2 to 5 bookmarks; claude-plugin-watchbill gets 7, because five experiment Bases under `dev-docs/runs/` are Bases like any other (D2). A pattern such as `**/runs/**` would drop them but also hides a run's judging board that a system declares as an item board, so it is not a default. A vault such as the `~/dev` umbrella (1,103 Bases) would get hundreds; the Bookmarks pane scrolls, and the group can be collapsed. If that is a problem in practice, a cap is a later change.
 
 ## How it is built
 
@@ -81,6 +81,22 @@ With these, every watchbill system vault in the scan gets 2 to 5 bookmarks. A va
 - **The Bookmarks plugin emits `changed`** when its list changes, including when a sync tool replaces `bookmarks.json` (its wrapper reloads on a config-file change); the plugin listens and heals the group (duplicate group from another device, a Base bookmark John removed by hand).
 - **macOS paths are case-insensitive**: a test folder `TEST/` landed inside the repo's `test/`; Obsidian reports the real path and the plugin follows it. Test fixtures now use `TEST-bb/`.
 - **Real vaults**: `job-hunt-resume` (no bookmarks) got its 2 boards; `claude-plugin-watchbill`'s two "Base · " bookmarks moved into the group, plus 5 experiment Bases under `dev-docs/runs/` (any Base in the vault, D2; rename or add a skip pattern if they are noise).
+
+## Verification (2026-10-28)
+
+A cold verifier read revision 3 against the manifest, vault setup and Obsidian's typings; its report is saved verbatim in [verification/2026-10-28-design-verifier.md](verification/2026-10-28-design-verifier.md). What became of each finding:
+
+| Finding | Outcome |
+|---|---|
+| Removal during a partial LiveSync on the iPad (3a) | Fixed in 0.1.1: no removal of a missing Base's bookmark in the first minute after load; a second pass after the minute. |
+| Duplicate groups and paths across devices (3b) | Built in 0.1.0 (fold duplicate groups, dedupe by path, idempotent plan); unit-tested and live-tested. |
+| Titles show `_decisions.base`, repeated across systems (2b, MAJOR 1) | Within D6 (John: "better to get a good file name convention there than worry about bookmarking titles"); design text corrected; told John. |
+| John cannot remove or reorder Bases inside the group (3c, flag 2) | Inherent in D2 and D5 (the group is managed); his own items in the group and every bookmark outside it are kept. Told John. |
+| `dev-docs/runs/` Bases in claude-plugin-watchbill (1a) | Kept (D2: every Base); text corrected. |
+| Excluded files not honoured (3g) | Fixed in 0.1.1. |
+| `**/` matching zero folders (1c) | Unit-tested (root `Untitled.base`). |
+| BRAT update-at-startup not set by vault setup (1d), release risk (3h) | In the rollout request to obsidian-vault-lifecycle; D11 accepted the risk; the release gate is CI plus live tests. |
+| Leftover TEST group | Already removed before the report arrived (re-checked). |
 
 ## Rollout (D8, D11)
 
