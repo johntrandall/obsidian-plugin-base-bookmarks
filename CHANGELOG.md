@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Looks again every 5 minutes on its own and repairs the group if it is out of step (writes nothing otherwise). A safety net after one start under mobile emulation, on 2026-10-29, left a new Base unbookmarked until the next manual run; two retries did not reproduce it.
+
 ## 0.1.1
 
 - For the first minute after Obsidian loads, bookmarks of Bases that are not on disk yet are kept, not removed: on a phone or tablet a sync tool such as LiveSync may still be delivering them. The plugin looks again when the minute is over. (Found by the design verification of 2026-10-28.)

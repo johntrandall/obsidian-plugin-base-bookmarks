@@ -12,6 +12,7 @@ Bases tend to live a few folders deep, among the notes they show. The Bookmarks 
 - **No titles:** each bookmark shows the Base's file name, with its `.base` extension (Obsidian shows the extension for every file that is not Markdown), so good file names are what make the list readable.
 - **Sync-safe start:** for the first minute after Obsidian loads, a bookmark whose Base is not on disk yet is kept (a sync tool may still be delivering it); the plugin looks again after that minute.
 - **Skip patterns** keep noise out: git worktree copies, templates, test fixtures, vendored folders, archives, TaskNotes' default views and `Untitled*.base` files are skipped by default. Edit the list in Settings → Base Bookmarks. Bases in Obsidian's own Excluded files are skipped as well.
+- **Re-check:** every 5 minutes it looks again and repairs the group if something was missed; it writes nothing when the group is in step.
 - **Command:** "Base Bookmarks: Bookmark all Bases now" rebuilds the group on demand (also a button in the settings).
 - Works on desktop and mobile. Writes nothing but bookmarks and its own settings.
 

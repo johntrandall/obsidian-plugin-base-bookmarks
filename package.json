@@ -1,6 +1,6 @@
 {
   "name": "obsidian-plugin-base-bookmarks",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Keeps a bookmark for every Base in the vault, in a Bases group of the Bookmarks pane.",
   "main": "main.js",
   "type": "module",

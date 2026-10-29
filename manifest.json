@@ -1,7 +1,7 @@
 {
   "id": "base-bookmarks",
   "name": "Base Bookmarks",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minAppVersion": "1.13.0",
   "description": "Keeps a bookmark for every Base in the vault, in a Bases group of the Bookmarks pane.",
   "author": "John Randall",

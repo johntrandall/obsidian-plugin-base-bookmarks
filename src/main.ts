@@ -12,6 +12,9 @@ const DEFAULT_SETTINGS: BaseBookmarksSettings = { skip: DEFAULT_SKIP };
 // LiveSync may still be delivering files on a phone or tablet).
 const SETTLE_MS = 60_000;
 
+// How often the plugin looks again on its own.
+const RECHECK_MS = 5 * 60_000;
+
 // UNDOCUMENTED API (README, "Undocumented API"). Obsidian's core Bookmarks
 // plugin is not part of the published plugin API. These members were read
 // from Obsidian 1.15.0 on 2026-10-28: `items` (the top-level list, groups hold
@@ -65,6 +68,10 @@ export default class BaseBookmarksPlugin extends Plugin {
 				}),
 			);
 			this.watchBookmarks();
+			// Safety net: look again every few minutes. Writes nothing unless the
+			// group is out of step (one unexplained missed start under mobile
+			// emulation, 2026-10-29, not reproduced; dev-docs/watch.md).
+			this.registerInterval(window.setInterval(() => this.scheduleSync(), RECHECK_MS));
 			void this.sync(false);
 		});
 	}
