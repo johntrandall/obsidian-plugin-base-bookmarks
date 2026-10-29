@@ -31,3 +31,5 @@ To John in this session's chat; anything urgent also as a push notification.
 
 - 2026-10-28 17:40: watch armed; 3 vaults on 0.1.1, all in step.
 - 2026-10-28 18:56: claude-plugin-watchbill went from 7 to 8 Bases and its group followed on its own (a Base created by another session, bookmarked live); 3 vaults in step; intake not yet processed; Mel offline.
+- 2026-10-29 11:38: the session was idle overnight (the evening and 09:57 checks did not run). Probe: 3 vaults in step; intake still `processed: null`; CI green; no issues. Mel's tunnel up, but Obsidian closed there and no test vault on the iPad: tested under Obsidian's mobile emulation instead (gate row 4). One missed start under emulation, not reproduced; 0.1.2 released with a 5-minute re-check and installed in the 3 vaults.
+- 2026-10-29 11:55: watch ended. Open: rollout to every vault and this vault's rename and LiveSync enrolment (with obsidian-vault-lifecycle, intake 2026-10-28-base-bookmarks-rollout); a real-iPad test once a vault with the plugin reaches Mel.
