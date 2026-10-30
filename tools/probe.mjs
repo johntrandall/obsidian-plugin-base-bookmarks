@@ -7,7 +7,7 @@
 //   node tools/probe.mjs            # every vault with the plugin
 //   node tools/probe.mjs --open     # only vaults Obsidian has open
 //   node tools/probe.mjs --problems # print only vaults out of step
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { DEFAULT_SKIP, plan } from "../src/plan.ts";
@@ -17,10 +17,21 @@ const registry = JSON.parse(
 	readFileSync(join(homedir(), "Library/Application Support/obsidian/obsidian.json"), "utf8"),
 );
 
-// Obsidian does not index dot-folders, so neither does the probe.
+// Obsidian does not index dot-folders, so neither does the probe. It does
+// follow symlinks (the ~/decisions vault is built from them), so the probe
+// does too, guarding against loops by real path.
 function basePaths(root) {
 	const out = [];
+	const visited = new Set();
 	const walk = (dir, rel) => {
+		let real;
+		try {
+			real = realpathSync(dir);
+		} catch {
+			return;
+		}
+		if (visited.has(real)) return;
+		visited.add(real);
 		let entries;
 		try {
 			entries = readdirSync(dir, { withFileTypes: true });
@@ -30,7 +41,15 @@ function basePaths(root) {
 		for (const e of entries) {
 			if (e.name.startsWith(".") || e.name === "node_modules") continue;
 			const r = rel ? `${rel}/${e.name}` : e.name;
-			if (e.isDirectory()) walk(join(dir, e.name), r);
+			let isDir = e.isDirectory();
+			if (e.isSymbolicLink()) {
+				try {
+					isDir = statSync(join(dir, e.name)).isDirectory();
+				} catch {
+					continue;
+				}
+			}
+			if (isDir) walk(join(dir, e.name), r);
 			else if (e.name.toLowerCase().endsWith(".base")) out.push(r);
 		}
 	};
